@@ -1,110 +1,102 @@
 import { 
-  serial, 
+  integer, 
   text, 
-  pgTable, 
-  timestamp, 
-  numeric, 
-  boolean, 
-  integer,
-  pgEnum,
-  varchar
-} from 'drizzle-orm/pg-core';
+  sqliteTable, 
+  real, 
+  integer as boolean
+} from 'drizzle-orm/sqlite-core';
 import { relations } from 'drizzle-orm';
 
-// Enums
-export const productCategoryEnum = pgEnum('product_category', ['social_media', 'number_service', 'proxy_service']);
-export const socialMediaPlatformEnum = pgEnum('social_media_platform', ['facebook', 'instagram', 'twitter', 'tiktok', 'snapchat', 'youtube', 'linkedin', 'other']);
-export const proxyTypeEnum = pgEnum('proxy_type', ['residential', 'datacenter', 'socks5']);
-export const orderStatusEnum = pgEnum('order_status', ['pending', 'completed', 'failed', 'refunded']);
+// Enums - using simple text fields for SQLite
 
 // Users table
-export const usersTable = pgTable('users', {
-  id: serial('id').primaryKey(),
-  email: varchar('email', { length: 255 }).notNull().unique(),
+export const usersTable = sqliteTable('users', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  email: text('email').notNull().unique(),
   password_hash: text('password_hash').notNull(),
-  full_name: varchar('full_name', { length: 255 }).notNull(),
-  created_at: timestamp('created_at').defaultNow().notNull(),
-  updated_at: timestamp('updated_at').defaultNow().notNull()
+  full_name: text('full_name').notNull(),
+  created_at: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull(),
+  updated_at: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull()
 });
 
 // Products table
-export const productsTable = pgTable('products', {
-  id: serial('id').primaryKey(),
-  name: varchar('name', { length: 255 }).notNull(),
+export const productsTable = sqliteTable('products', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  name: text('name').notNull(),
   description: text('description'),
-  category: productCategoryEnum('category').notNull(),
-  price: numeric('price', { precision: 10, scale: 2 }).notNull(),
-  is_available: boolean('is_available').default(true).notNull(),
-  created_at: timestamp('created_at').defaultNow().notNull(),
-  updated_at: timestamp('updated_at').defaultNow().notNull()
+  category: text('category').notNull(),
+  price: real('price').notNull(),
+  is_available: integer('is_available', { mode: 'boolean' }).default(true).notNull(),
+  created_at: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull(),
+  updated_at: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull()
 });
 
 // Social media login details table
-export const socialMediaLoginsTable = pgTable('social_media_logins', {
-  id: serial('id').primaryKey(),
+export const socialMediaLoginsTable = sqliteTable('social_media_logins', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
   product_id: integer('product_id').notNull().references(() => productsTable.id),
-  platform: socialMediaPlatformEnum('platform').notNull(),
-  username: varchar('username', { length: 255 }).notNull(),
-  password: varchar('password', { length: 255 }).notNull(),
-  email: varchar('email', { length: 255 }).notNull(),
-  email_password: varchar('email_password', { length: 255 }).notNull(),
+  platform: text('platform').notNull(),
+  username: text('username').notNull(),
+  password: text('password').notNull(),
+  email: text('email').notNull(),
+  email_password: text('email_password').notNull(),
   recovery_codes: text('recovery_codes'),
   auth_tokens: text('auth_tokens'),
-  is_sold: boolean('is_sold').default(false).notNull(),
-  created_at: timestamp('created_at').defaultNow().notNull()
+  is_sold: integer('is_sold', { mode: 'boolean' }).default(false).notNull(),
+  created_at: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull()
 });
 
 // Number services table
-export const numberServicesTable = pgTable('number_services', {
-  id: serial('id').primaryKey(),
+export const numberServicesTable = sqliteTable('number_services', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
   product_id: integer('product_id').notNull().references(() => productsTable.id),
-  country_code: varchar('country_code', { length: 2 }).notNull(),
-  country_name: varchar('country_name', { length: 100 }).notNull(),
-  phone_number: varchar('phone_number', { length: 20 }),
-  api_provider: varchar('api_provider', { length: 100 }).notNull(),
-  provider_service_id: varchar('provider_service_id', { length: 255 }),
-  expires_at: timestamp('expires_at').notNull(),
-  is_active: boolean('is_active').default(true).notNull(),
-  created_at: timestamp('created_at').defaultNow().notNull()
+  country_code: text('country_code').notNull(),
+  country_name: text('country_name').notNull(),
+  phone_number: text('phone_number'),
+  api_provider: text('api_provider').notNull(),
+  provider_service_id: text('provider_service_id'),
+  expires_at: integer('expires_at', { mode: 'timestamp' }).notNull(),
+  is_active: integer('is_active', { mode: 'boolean' }).default(true).notNull(),
+  created_at: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull()
 });
 
 // Proxy services table
-export const proxyServicesTable = pgTable('proxy_services', {
-  id: serial('id').primaryKey(),
+export const proxyServicesTable = sqliteTable('proxy_services', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
   product_id: integer('product_id').notNull().references(() => productsTable.id),
-  proxy_type: proxyTypeEnum('proxy_type').notNull(),
-  location: varchar('location', { length: 100 }).notNull(),
-  ip_address: varchar('ip_address', { length: 45 }),
+  proxy_type: text('proxy_type').notNull(),
+  location: text('location').notNull(),
+  ip_address: text('ip_address'),
   port: integer('port'),
-  username: varchar('username', { length: 255 }),
-  password: varchar('password', { length: 255 }),
-  bandwidth_limit: varchar('bandwidth_limit', { length: 50 }),
-  expires_at: timestamp('expires_at'),
-  is_active: boolean('is_active').default(true).notNull(),
-  created_at: timestamp('created_at').defaultNow().notNull()
+  username: text('username'),
+  password: text('password'),
+  bandwidth_limit: text('bandwidth_limit'),
+  expires_at: integer('expires_at', { mode: 'timestamp' }),
+  is_active: integer('is_active', { mode: 'boolean' }).default(true).notNull(),
+  created_at: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull()
 });
 
 // Orders table
-export const ordersTable = pgTable('orders', {
-  id: serial('id').primaryKey(),
+export const ordersTable = sqliteTable('orders', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
   user_id: integer('user_id').notNull().references(() => usersTable.id),
   product_id: integer('product_id').notNull().references(() => productsTable.id),
-  status: orderStatusEnum('status').default('pending').notNull(),
-  total_amount: numeric('total_amount', { precision: 10, scale: 2 }).notNull(),
-  payment_method: varchar('payment_method', { length: 100 }),
-  transaction_id: varchar('transaction_id', { length: 255 }),
-  created_at: timestamp('created_at').defaultNow().notNull(),
-  updated_at: timestamp('updated_at').defaultNow().notNull()
+  status: text('status').default('pending').notNull(),
+  total_amount: real('total_amount').notNull(),
+  payment_method: text('payment_method'),
+  transaction_id: text('transaction_id'),
+  created_at: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull(),
+  updated_at: integer('updated_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull()
 });
 
 // Order item details table (linking orders to specific purchased items)
-export const orderItemDetailsTable = pgTable('order_item_details', {
-  id: serial('id').primaryKey(),
+export const orderItemDetailsTable = sqliteTable('order_item_details', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
   order_id: integer('order_id').notNull().references(() => ordersTable.id),
   social_media_login_id: integer('social_media_login_id').references(() => socialMediaLoginsTable.id),
   number_service_id: integer('number_service_id').references(() => numberServicesTable.id),
   proxy_service_id: integer('proxy_service_id').references(() => proxyServicesTable.id),
-  created_at: timestamp('created_at').defaultNow().notNull()
+  created_at: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()).notNull()
 });
 
 // Relations
